@@ -152,6 +152,8 @@ class RacingEnv(gym.Env):
 
         self.steps = 0
         self.progress_distance = 0.0
+        self.episode_return = 0.0
+        self.last_reward = 0.0
         self.speed_sum = 0.0
         self.low_speed_steps = 0
         self.on_track_steps = 0
@@ -270,6 +272,8 @@ class RacingEnv(gym.Env):
         self.car_speed = float(self.np_random.uniform(0.0, 0.4))
         self.steps = 0
         self.progress_distance = 0.0
+        self.episode_return = 0.0
+        self.last_reward = 0.0
         self.speed_sum = 0.0
         self.low_speed_steps = 0
         self.on_track_steps = 0
@@ -347,6 +351,9 @@ class RacingEnv(gym.Env):
             reward += 100.0
         if stranded:
             reward -= 20.0 * self.off_track_penalty_scale
+
+        self.last_reward = float(reward)
+        self.episode_return += self.last_reward
 
         info = {
             "progress_laps": max(0.0, self.progress_distance / self.track_length),
@@ -499,9 +506,9 @@ class RacingEnv(gym.Env):
         progress = max(0.0, self.progress_distance / self.track_length)
         status = "ON TRACK" if self.on_track else "OFF TRACK"
         color = (125, 235, 170) if self.on_track else (255, 115, 115)
-        panel = pygame.Surface((560, 94), pygame.SRCALPHA)
+        panel = pygame.Surface((560, 124), pygame.SRCALPHA)
         panel.fill((12, 20, 23, 225))
-        self.screen.blit(panel, (370, 350))
+        self.screen.blit(panel, (370, 335))
         title = self.font.render(
             f"{self.track_name.upper()} CIRCUIT",
             True,
@@ -513,13 +520,19 @@ class RacingEnv(gym.Env):
             color,
         )
         detail = self.font.render(
+            f"Episode points {self.episode_return:+.1f}   Last step {self.last_reward:+.2f}",
+            True,
+            (235, 215, 145),
+        )
+        self.screen.blit(title, (386, 345))
+        self.screen.blit(label, (386, 377))
+        self.screen.blit(detail, (386, 409))
+        departures = self.font.render(
             f"Departures {self.off_track_count}",
             True,
             (205, 214, 211),
         )
-        self.screen.blit(title, (386, 360))
-        self.screen.blit(label, (386, 391))
-        self.screen.blit(detail, (782, 391))
+        self.screen.blit(departures, (800, 377))
         pygame.display.flip()
         self.clock.tick(self.metadata["render_fps"])
 
