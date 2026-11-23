@@ -62,10 +62,15 @@ def main():
         writer.writerows(records)
 
     print(f"Episodes: {len(records)}")
-    print(f"Completion rate: {np.mean([r['finished'] for r in records]):.2%}")
-    print(f"Mean laps: {np.mean([r['progress_laps'] for r in records]):.3f}")
-    print(f"Mean departures: {np.mean([r['departures'] for r in records]):.2f}")
-    print(f"Mean on-track fraction: {np.mean([r['on_track_fraction'] for r in records]):.2%}")
+    completion = np.array([r["finished"] for r in records], dtype=float)
+    laps = np.array([r["progress_laps"] for r in records], dtype=float)
+    departures = np.array([r["departures"] for r in records], dtype=float)
+    on_track = np.array([r["on_track_fraction"] for r in records], dtype=float)
+
+    print(f"Completion rate: {completion.mean():.2%} (SD {completion.std(ddof=1):.2%})")
+    print(f"Laps: mean {laps.mean():.3f}, SD {laps.std(ddof=1):.3f}")
+    print(f"Departures: mean {departures.mean():.2f}, SD {departures.std(ddof=1):.2f}")
+    print(f"On-track fraction: mean {on_track.mean():.2%}, SD {on_track.std(ddof=1):.2%}")
     print(f"Episode results: {args.output}")
     env.close()
 
