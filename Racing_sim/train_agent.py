@@ -42,7 +42,7 @@ def parse_args():
 def main():
     args = parse_args()
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_dir = args.run_dir or Path("training_runs") / f"ppo_{args.track}_r{args.progress_reward_scale:g}_p{args.off_track_penalty_scale:g}_{stamp}_seed{args.seed}"
+    run_dir = args.run_dir or Path("training_runs") / f"ppo_{args.track}_r{args.progress_reward_scale:g}_p{args.off_track_penalty_scale:g}_b{args.completion_bonus:g}_{stamp}_seed{args.seed}"
     model_dir = run_dir / "models"
     checkpoint_dir = model_dir / "checkpoints"
     best_dir = model_dir / "best"
