@@ -14,6 +14,7 @@ def parse_args():
     parser.add_argument("--track", choices=("oval", "technical", "complex"), default="oval")
     parser.add_argument("--progress-reward-scale", type=float, default=0.04)
     parser.add_argument("--off-track-penalty-scale", type=float, default=1.0)
+    parser.add_argument("--completion-bonus", type=float, default=100.0)
     parser.add_argument("--seed", type=int, default=1000)
     parser.add_argument("--episodes", type=int, default=1)
     parser.add_argument(
@@ -31,6 +32,7 @@ def main():
         track=args.track,
         progress_reward_scale=args.progress_reward_scale,
         off_track_penalty_scale=args.off_track_penalty_scale,
+        completion_bonus=args.completion_bonus,
     )
     model = PPO.load(str(args.model), device="cpu")
 
