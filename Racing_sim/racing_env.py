@@ -96,7 +96,7 @@ class RacingEnv(gym.Env):
         dtype=np.float64,
     )
 
-    def __init__(self, render_mode=None, track="technical", progress_reward_scale=0.04, off_track_penalty_scale=1.0):
+    def __init__(self, render_mode=None, track="technical", progress_reward_scale=0.04, off_track_penalty_scale=1.0, completion_bonus=100.0):
         super().__init__()
         if render_mode not in (None, "human"):
             raise ValueError("render_mode must be None or 'human'")
@@ -107,10 +107,13 @@ class RacingEnv(gym.Env):
             raise ValueError("progress_reward_scale must be positive")
         if off_track_penalty_scale < 0:
             raise ValueError("off_track_penalty_scale cannot be negative")
+        if completion_bonus < 0:
+            raise ValueError("completion_bonus cannot be negative")
 
         self.track_name = track
         self.progress_reward_scale = float(progress_reward_scale)
         self.off_track_penalty_scale = float(off_track_penalty_scale)
+        self.completion_bonus = float(completion_bonus)
         self.render_mode = render_mode
         self.screen = None
         self.clock = None
@@ -348,7 +351,7 @@ class RacingEnv(gym.Env):
         truncated = self.steps >= self.max_steps and not terminated
 
         if finished:
-            reward += 100.0
+            reward += self.completion_bonus
         if stranded:
             reward -= 20.0 * self.off_track_penalty_scale
 
