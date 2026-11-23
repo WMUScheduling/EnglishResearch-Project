@@ -33,18 +33,18 @@ Use the pilot to settle the track and training setup. Freeze them before the mai
 
 ## Main experiment
 
-Each condition starts a fresh independent PPO run. Change only the progress reward scale and off-track penalty scale. For example:
+Each condition starts a fresh independent PPO run. In the first stage, hold the completion bonus at 100 while varying progress reward and off-track penalty. Then hold a selected R/P setting constant and vary the completion bonus. For example:
 
 ```powershell
-python train_agent.py --track complex --progress-reward-scale 0.02 --off-track-penalty-scale 0.5 --timesteps 500000 --seed 42
-python evaluate_agent.py --track complex --progress-reward-scale 0.02 --off-track-penalty-scale 0.5 --model training_runs/<run-folder>/models/final_model.zip --episodes 20 --seed 2026 --output training_runs/<run-folder>/evaluation/final.csv
+python train_agent.py --track complex --progress-reward-scale 0.02 --off-track-penalty-scale 0.5 --completion-bonus 100 --timesteps 500000 --seed 42
+python evaluate_agent.py --track complex --progress-reward-scale 0.02 --off-track-penalty-scale 0.5 --completion-bonus 100 --model training_runs/<run-folder>/models/final_model.zip --episodes 20 --seed 2026 --output training_runs/<run-folder>/evaluation/final.csv
 ```
 
 Repeat each condition across independent seeds with the same number of training steps. Do not resume from another condition's model in the main experiment.
 
 ## Training records
 
-Each run stores consequence values, track, seed, PPO settings, Monitor episode CSV, checkpoints, evaluation results, the final model, and TensorBoard events under `training_runs`. The evaluator reports completion, progress, departures, speed, low speed time, and on track fraction. These measures help distinguish improved driving from simply slowing down or stopping.
+Each run stores the progress reward scale, off-track penalty scale, completion bonus, track, seed, PPO settings, Monitor episode CSV, checkpoints, evaluation results, the final model, and TensorBoard events under `training_runs`. The evaluator reports completion, progress, departures, speed, low speed time, and on track fraction. These measures help distinguish improved driving from simply slowing down or stopping.
 
 View training data with:
 
