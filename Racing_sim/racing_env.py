@@ -96,14 +96,21 @@ class RacingEnv(gym.Env):
         dtype=np.float64,
     )
 
-    def __init__(self, render_mode=None, track="technical"):
+    def __init__(self, render_mode=None, track="technical", progress_reward_scale=0.04, off_track_penalty_scale=1.0):
         super().__init__()
         if render_mode not in (None, "human"):
             raise ValueError("render_mode must be None or 'human'")
         if track not in ("oval", "technical"):
             raise ValueError("track must be 'oval' or 'technical'")
 
+        if progress_reward_scale <= 0:
+            raise ValueError("progress_reward_scale must be positive")
+        if off_track_penalty_scale < 0:
+            raise ValueError("off_track_penalty_scale cannot be negative")
+
         self.track_name = track
+        self.progress_reward_scale = float(progress_reward_scale)
+        self.off_track_penalty_scale = float(off_track_penalty_scale)
         self.render_mode = render_mode
         self.screen = None
         self.clock = None
@@ -145,6 +152,9 @@ class RacingEnv(gym.Env):
 
         self.steps = 0
         self.progress_distance = 0.0
+        self.speed_sum = 0.0
+        self.low_speed_steps = 0
+        self.on_track_steps = 0
         self.off_track_count = 0
         self.off_track_steps = 0
         self.was_off_track = False
@@ -241,6 +251,9 @@ class RacingEnv(gym.Env):
         self.car_speed = float(self.np_random.uniform(0.0, 0.4))
         self.steps = 0
         self.progress_distance = 0.0
+        self.speed_sum = 0.0
+        self.low_speed_steps = 0
+        self.on_track_steps = 0
         self.off_track_count = 0
         self.off_track_steps = 0
         self.was_off_track = False
@@ -285,6 +298,9 @@ class RacingEnv(gym.Env):
 
         self.steps += 1
         self.on_track = abs(lateral_offset) <= self.track_half_width
+        self.speed_sum += self.car_speed
+        self.low_speed_steps += int(self.car_speed < 0.5)
+        self.on_track_steps += int(self.on_track)
         if not self.on_track and not self.was_off_track:
             self.off_track_count += 1
         self.was_off_track = not self.on_track
@@ -294,13 +310,13 @@ class RacingEnv(gym.Env):
         else:
             self.off_track_steps += 1
 
-        reward = progress_delta * 0.04 - 0.01
+        reward = progress_delta * self.progress_reward_scale - 0.01
         if self.on_track:
             reward += 0.01 * self.car_speed
         else:
-            reward -= 0.15
+            reward -= 0.15 * self.off_track_penalty_scale
         if not self.on_track and self.off_track_steps == 1:
-            reward -= 3.0
+            reward -= 3.0 * self.off_track_penalty_scale
 
         finished = self.progress_distance >= self.track_length
         stranded = self.off_track_steps >= self.off_track_limit
@@ -311,7 +327,7 @@ class RacingEnv(gym.Env):
         if finished:
             reward += 100.0
         if stranded:
-            reward -= 20.0
+            reward -= 20.0 * self.off_track_penalty_scale
 
         info = {
             "progress_laps": max(0.0, self.progress_distance / self.track_length),
@@ -321,6 +337,9 @@ class RacingEnv(gym.Env):
             "finished": finished,
             "is_success": finished,
             "episode_steps": self.steps,
+            "average_speed": self.speed_sum / max(self.steps, 1),
+            "low_speed_fraction": self.low_speed_steps / max(self.steps, 1),
+            "on_track_fraction": self.on_track_steps / max(self.steps, 1),
             "lateral_offset": lateral_offset,
             "speed": self.car_speed,
         }

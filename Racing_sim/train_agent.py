@@ -18,6 +18,9 @@ EPISODE_INFO = (
     "finished",
     "stranded",
     "episode_steps",
+    "average_speed",
+    "low_speed_fraction",
+    "on_track_fraction",
 )
 
 
@@ -25,6 +28,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--track", choices=("oval", "technical"), default="technical")
     parser.add_argument("--resume-model", type=Path)
+    parser.add_argument("--progress-reward-scale", type=float, default=0.04)
+    parser.add_argument("--off-track-penalty-scale", type=float, default=1.0)
     parser.add_argument("--timesteps", type=int, default=500_000)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--eval-freq", type=int, default=25_000)
@@ -36,7 +41,7 @@ def parse_args():
 def main():
     args = parse_args()
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_dir = args.run_dir or Path("training_runs") / f"ppo_{args.track}_{stamp}_seed{args.seed}"
+    run_dir = args.run_dir or Path("training_runs") / f"ppo_{args.track}_r{args.progress_reward_scale:g}_p{args.off_track_penalty_scale:g}_{stamp}_seed{args.seed}"
     model_dir = run_dir / "models"
     checkpoint_dir = model_dir / "checkpoints"
     best_dir = model_dir / "best"
@@ -69,6 +74,9 @@ def main():
             "lap_progress",
             "departure_fraction",
         ],
+        "progress_reward_scale": args.progress_reward_scale,
+        "off_track_penalty_scale": args.off_track_penalty_scale,
+        "resume_model": str(args.resume_model) if args.resume_model else None,
         "total_timesteps": args.timesteps,
         "seed": args.seed,
         "learning_rate": 3e-4,
@@ -91,7 +99,7 @@ def main():
     )
 
     train_env = Monitor(
-        RacingEnv(track=args.track),
+        RacingEnv(track=args.track, progress_reward_scale=args.progress_reward_scale, off_track_penalty_scale=args.off_track_penalty_scale),
         filename=str(run_dir / "train"),
         info_keywords=EPISODE_INFO,
     )
