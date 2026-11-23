@@ -2,40 +2,49 @@
 
 This project studies how reward and penalty magnitudes affect driving behavior in a PPO racing agent.
 
-## Install and preview
+## Install
 
 Run from this folder with the project virtual environment active:
 
 ```powershell
 python -m pip install -r requirements.txt
-python main.py
 ```
 
-## Preview a track\n\nOpen a static preview before training. Close the window to exit.\n\n```powershell\npython preview_track.py --track complex\n```\n\nAvailable tracks are `oval`, `technical`, and `complex`. The complex circuit has longer straights, tighter rounded corners, and linked S bends, without crossing itself. Its preview window is larger, with clear track edges and markings. Preview and choose the course before the pilot, then keep it fixed throughout the experiment.\n\n## Establish the pilot baseline
+## Preview a track
 
-Run the default consequence values on the oval and check whether the agent can complete laps:
+Open a static track preview before training. Close the window to exit.
 
 ```powershell
-python train_agent.py --track oval --timesteps 500000 --seed 42
-python evaluate_agent.py --track oval --model training_runs/<run-folder>/models/final_model.zip --episodes 20 --seed 1000
+python preview_track.py --track complex
 ```
 
-Use the pilot to settle the track and training setup. Freeze them before the main experiment. To pilot the complex circuit, replace `oval` with `complex` in both commands.
+Available tracks are `oval`, `technical`, and `complex`. The complex course uses linked S turns with stronger changes in direction. Preview the course, then keep the selected track fixed throughout the pilot and experiment.
+
+## Establish the pilot baseline
+
+The pilot checks whether the agent can learn to drive the selected track under the default consequence values.
+
+```powershell
+python train_agent.py --track complex --timesteps 500000 --seed 42
+python evaluate_agent.py --track complex --model training_runs/<run-folder>/models/final_model.zip --episodes 20 --seed 1000
+```
+
+Use the pilot to settle the track and training setup. Freeze them before the main experiment.
 
 ## Main experiment
 
 Each condition starts a fresh independent PPO run. Change only the progress reward scale and off-track penalty scale. For example:
 
 ```powershell
-python train_agent.py --track oval --progress-reward-scale 0.02 --off-track-penalty-scale 0.5 --timesteps 500000 --seed 42
-python evaluate_agent.py --track oval --progress-reward-scale 0.02 --off-track-penalty-scale 0.5 --model training_runs/<run-folder>/models/final_model.zip --episodes 20 --seed 2026 --output training_runs/<run-folder>/evaluation/final.csv
+python train_agent.py --track complex --progress-reward-scale 0.02 --off-track-penalty-scale 0.5 --timesteps 500000 --seed 42
+python evaluate_agent.py --track complex --progress-reward-scale 0.02 --off-track-penalty-scale 0.5 --model training_runs/<run-folder>/models/final_model.zip --episodes 20 --seed 2026 --output training_runs/<run-folder>/evaluation/final.csv
 ```
 
 Repeat each condition across independent seeds with the same number of training steps. Do not resume from another condition's model in the main experiment.
 
 ## Training records
 
-Each run stores consequence values, track, seed, PPO settings, episode Monitor CSV, checkpoints, evaluation results, the final model, and TensorBoard events under `training_runs`. The evaluator reports completion, progress, departures, speed, low-speed time, and on-track fraction. These behavior measures help distinguish improved driving from simply slowing down or stopping.
+Each run stores consequence values, track, seed, PPO settings, Monitor episode CSV, checkpoints, evaluation results, the final model, and TensorBoard events under `training_runs`. The evaluator reports completion, progress, departures, speed, low speed time, and on track fraction. These measures help distinguish improved driving from simply slowing down or stopping.
 
 View training data with:
 
