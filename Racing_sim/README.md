@@ -11,7 +11,7 @@ python -m pip install -r requirements.txt
 python main.py
 ```
 
-## Establish the pilot baseline
+## Preview a track\n\nOpen a static preview before training. Close the window to exit.\n\n```powershell\npython preview_track.py --track complex\n```\n\nAvailable tracks are `oval`, `technical`, and `complex`. The complex circuit has long straights, linked turns, a chicane, and hairpin sections. Preview and choose the course before the pilot, then keep it fixed throughout the experiment.\n\n## Establish the pilot baseline
 
 Run the default consequence values on the oval and check whether the agent can complete laps:
 
@@ -20,7 +20,7 @@ python train_agent.py --track oval --timesteps 500000 --seed 42
 python evaluate_agent.py --track oval --model training_runs/<run-folder>/models/final_model.zip --episodes 20 --seed 1000
 ```
 
-Use the pilot to settle the track and training setup. Freeze them before the main experiment.
+Use the pilot to settle the track and training setup. Freeze them before the main experiment. To pilot the complex circuit, replace `oval` with `complex` in both commands.
 
 ## Main experiment
 
