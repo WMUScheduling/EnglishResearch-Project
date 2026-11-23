@@ -40,6 +40,13 @@ python train_agent.py --track complex --progress-reward-scale 0.02 --off-track-p
 python evaluate_agent.py --track complex --progress-reward-scale 0.02 --off-track-penalty-scale 0.5 --completion-bonus 100 --model training_runs/<run-folder>/models/final_model.zip --episodes 20 --seed 2026 --output training_runs/<run-folder>/evaluation/final.csv
 ```
 
+After selecting an R/P setting, compare completion bonus values while holding the other settings fixed. For example:
+
+```powershell
+python train_agent.py --track complex --progress-reward-scale 0.04 --off-track-penalty-scale 1 --completion-bonus 0 --timesteps 500000 --seed 42
+python train_agent.py --track complex --progress-reward-scale 0.04 --off-track-penalty-scale 1 --completion-bonus 100 --timesteps 500000 --seed 42
+```
+
 Repeat each condition across independent seeds with the same number of training steps. Do not resume from another condition's model in the main experiment.
 
 ## Training records
