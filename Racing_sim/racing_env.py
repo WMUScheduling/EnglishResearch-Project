@@ -196,23 +196,20 @@ class RacingEnv(gym.Env):
             return self._catmull_rom(oval_points)
         if track == "complex":
             angles = np.linspace(0.0, 2 * math.pi, 96, endpoint=False)
-            exponent = 4.5
             cosine = np.cos(angles)
             sine = np.sin(angles)
-            rounded_rectangle_radius = (
-                (np.abs(cosine) / 370.0) ** exponent
-                + (np.abs(sine) / 260.0) ** exponent
-            ) ** (-1.0 / exponent)
-            corner_variation = (
+            radius = (
                 1.0
-                + 0.045 * np.sin(5 * angles + 0.4)
-                + 0.025 * np.cos(9 * angles - 0.3)
+                + 0.145 * np.sin(3 * angles + 0.2)
+                + 0.085 * np.sin(5 * angles - 0.5)
+                + 0.035 * np.cos(7 * angles + 0.4)
             )
-            radius = rounded_rectangle_radius * corner_variation
+            radius_x = 370.0 * radius
+            radius_y = 250.0 * radius
             complex_points = np.column_stack(
                 (
-                    500 + radius * cosine,
-                    350 + radius * sine,
+                    500 + radius_x * cosine,
+                    350 + radius_y * sine,
                 )
             )
             return self._catmull_rom(complex_points, samples_per_segment=16)
