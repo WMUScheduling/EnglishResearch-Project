@@ -15,6 +15,7 @@ def parse_args():
     parser.add_argument("--track", choices=("oval", "technical", "complex"), default="technical")
     parser.add_argument("--progress-reward-scale", type=float, default=0.04)
     parser.add_argument("--off-track-penalty-scale", type=float, default=1.0)
+    parser.add_argument("--completion-bonus", type=float, default=100.0)
     parser.add_argument("--model", type=Path, required=True)
     parser.add_argument("--episodes", type=int, default=20)
     parser.add_argument("--seed", type=int, default=2026)
@@ -24,7 +25,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    env = RacingEnv(track=args.track, progress_reward_scale=args.progress_reward_scale, off_track_penalty_scale=args.off_track_penalty_scale)
+    env = RacingEnv(track=args.track, progress_reward_scale=args.progress_reward_scale, off_track_penalty_scale=args.off_track_penalty_scale, completion_bonus=args.completion_bonus)
     model = PPO.load(str(args.model), device="cpu")
     records = []
 
@@ -52,6 +53,7 @@ def main():
             {
                 "episode": episode + 1,
                 "seed": episode_seed,
+                "completion_bonus": args.completion_bonus,
                 "return": round(total_reward, 4),
                 "progress_laps": round(float(info.get("progress_laps", 0.0)), 4),
                 "finished": bool(info.get("finished", False)),
@@ -71,6 +73,7 @@ def main():
         writer.writerows(records)
 
     print(f"Episodes: {len(records)}")
+    print(f"Completion bonus: {args.completion_bonus:g}")
     completion = np.array([r["finished"] for r in records], dtype=float)
     laps = np.array([r["progress_laps"] for r in records], dtype=float)
     departures = np.array([r["departures"] for r in records], dtype=float)
