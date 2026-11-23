@@ -26,7 +26,7 @@ EPISODE_INFO = (
 
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--track", choices=("oval", "technical"), default="technical")
+    parser.add_argument("--track", choices=("oval", "technical", "complex"), default="technical")
     parser.add_argument("--resume-model", type=Path)
     parser.add_argument("--progress-reward-scale", type=float, default=0.04)
     parser.add_argument("--off-track-penalty-scale", type=float, default=1.0)
@@ -55,9 +55,9 @@ def main():
         "algorithm": "PPO",
         "policy": "MlpPolicy",
         "track": args.track,
-        "track_control_points": 36 if args.track == "oval" else int(len(RacingEnv.CONTROL_POINTS)),
-        "track_samples_per_segment": 8,
-        "track_half_width_pixels": 50 if args.track == "oval" else 22,
+        "track_control_points": {"oval": 36, "technical": len(RacingEnv.CONTROL_POINTS), "complex": len(RacingEnv.COMPLEX_CONTROL_POINTS)}[args.track],
+        "track_samples_per_segment": 12 if args.track == "complex" else 8,
+        "track_half_width_pixels": {"oval": 50, "technical": 22, "complex": 18}[args.track],
         "reset_lateral_offset_pixels": [-8, 8],
         "reset_heading_jitter_degrees": [-5, 5],
         "reset_speed_range": [0, 0.4],
