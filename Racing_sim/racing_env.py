@@ -96,18 +96,21 @@ class RacingEnv(gym.Env):
         dtype=np.float64,
     )
 
-    def __init__(self, render_mode=None):
+    def __init__(self, render_mode=None, track="technical"):
         super().__init__()
         if render_mode not in (None, "human"):
             raise ValueError("render_mode must be None or 'human'")
+        if track not in ("oval", "technical"):
+            raise ValueError("track must be 'oval' or 'technical'")
 
+        self.track_name = track
         self.render_mode = render_mode
         self.screen = None
         self.clock = None
         self.font = None
         self.window_closed = False
 
-        self.track_half_width = 22.0
+        self.track_half_width = 50.0 if track == "oval" else 22.0
         self.max_speed = 4.5
         self.max_steps = 4000
         self.max_departures = 6
@@ -127,7 +130,7 @@ class RacingEnv(gym.Env):
             dtype=np.float32,
         )
 
-        self.track_centerline = self._build_track()
+        self.track_centerline = self._build_track(track)
         segment_vectors = np.roll(self.track_centerline, -1, axis=0) - self.track_centerline
         self.segment_lengths = np.linalg.norm(segment_vectors, axis=1)
         self.segment_lengths = np.maximum(self.segment_lengths, 1e-9)
@@ -174,7 +177,13 @@ class RacingEnv(gym.Env):
                 samples.append(point)
         return np.asarray(samples, dtype=np.float64)
 
-    def _build_track(self):
+    def _build_track(self, track):
+        if track == "oval":
+            angles = np.linspace(0.0, 2 * math.pi, 36, endpoint=False)
+            oval_points = np.column_stack(
+                (500 + 300 * np.cos(angles), 350 + 205 * np.sin(angles))
+            )
+            return self._catmull_rom(oval_points)
         return self._catmull_rom(self.CONTROL_POINTS)
 
     @staticmethod
@@ -360,7 +369,7 @@ class RacingEnv(gym.Env):
         if self.screen is None:
             pygame.init()
             self.screen = pygame.display.set_mode((1000, 700))
-            pygame.display.set_caption("Multi-Turn PPO Racing Track")
+            pygame.display.set_caption(f"{self.track_name.title()} Racing Track")
             self.clock = pygame.time.Clock()
             self.font = pygame.font.SysFont(None, 24)
 

@@ -23,6 +23,8 @@ EPISODE_INFO = (
 
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--track", choices=("oval", "technical"), default="technical")
+    parser.add_argument("--resume-model", type=Path)
     parser.add_argument("--timesteps", type=int, default=500_000)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--eval-freq", type=int, default=25_000)
@@ -34,7 +36,7 @@ def parse_args():
 def main():
     args = parse_args()
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_dir = args.run_dir or Path("training_runs") / f"ppo_{stamp}_seed{args.seed}"
+    run_dir = args.run_dir or Path("training_runs") / f"ppo_{args.track}_{stamp}_seed{args.seed}"
     model_dir = run_dir / "models"
     checkpoint_dir = model_dir / "checkpoints"
     best_dir = model_dir / "best"
@@ -47,10 +49,10 @@ def main():
     config = {
         "algorithm": "PPO",
         "policy": "MlpPolicy",
-        "track": "technical_multiturn_v2",
-        "track_control_points": int(len(RacingEnv.CONTROL_POINTS)),
+        "track": args.track,
+        "track_control_points": 36 if args.track == "oval" else int(len(RacingEnv.CONTROL_POINTS)),
         "track_samples_per_segment": 8,
-        "track_half_width_pixels": 22,
+        "track_half_width_pixels": 50 if args.track == "oval" else 22,
         "reset_lateral_offset_pixels": [-8, 8],
         "reset_heading_jitter_degrees": [-5, 5],
         "reset_speed_range": [0, 0.4],
@@ -89,12 +91,12 @@ def main():
     )
 
     train_env = Monitor(
-        RacingEnv(),
+        RacingEnv(track=args.track),
         filename=str(run_dir / "train"),
         info_keywords=EPISODE_INFO,
     )
     eval_env = Monitor(
-        RacingEnv(),
+        RacingEnv(track=args.track),
         filename=str(run_dir / "evaluation" / "episodes"),
         info_keywords=EPISODE_INFO,
     )
@@ -117,26 +119,32 @@ def main():
         verbose=1,
     )
 
-    model = PPO(
-        "MlpPolicy",
-        train_env,
-        learning_rate=3e-4,
-        n_steps=1024,
-        batch_size=128,
-        n_epochs=10,
-        gamma=0.99,
-        gae_lambda=0.95,
-        ent_coef=0.01,
-        policy_kwargs={"net_arch": [128, 128]},
-        seed=args.seed,
-        device="cpu",
-        tensorboard_log=str(run_dir / "tensorboard"),
-        verbose=1,
-    )
+    if args.resume_model:
+        model = PPO.load(str(args.resume_model), env=train_env, device="cpu")
+        model.set_random_seed(args.seed)
+        model.tensorboard_log = str(run_dir / "tensorboard")
+    else:
+        model = PPO(
+            "MlpPolicy",
+            train_env,
+            learning_rate=3e-4,
+            n_steps=1024,
+            batch_size=128,
+            n_epochs=10,
+            gamma=0.99,
+            gae_lambda=0.95,
+            ent_coef=0.01,
+            policy_kwargs={"net_arch": [128, 128]},
+            seed=args.seed,
+            device="cpu",
+            tensorboard_log=str(run_dir / "tensorboard"),
+            verbose=1,
+        )
     model.learn(
         total_timesteps=args.timesteps,
         callback=[checkpoint_callback, evaluation_callback],
         tb_log_name="PPO",
+        reset_num_timesteps=args.resume_model is None,
     )
     final_path = model_dir / "final_model"
     model.save(str(final_path))

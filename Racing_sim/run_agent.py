@@ -10,10 +10,11 @@ from racing_env import RacingEnv
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--track", choices=("oval", "technical"), default="technical")
     parser.add_argument("--model", type=Path, required=True)
     args = parser.parse_args()
 
-    env = RacingEnv(render_mode="human")
+    env = RacingEnv(render_mode="human", track=args.track)
     model = PPO.load(str(args.model), device="cpu")
     observation, _ = env.reset()
     terminated = False

@@ -12,6 +12,7 @@ from racing_env import RacingEnv
 
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--track", choices=("oval", "technical"), default="technical")
     parser.add_argument("--model", type=Path, required=True)
     parser.add_argument("--episodes", type=int, default=20)
     parser.add_argument("--seed", type=int, default=2026)
@@ -21,7 +22,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    env = RacingEnv()
+    env = RacingEnv(track=args.track)
     model = PPO.load(str(args.model), device="cpu")
     records = []
 
