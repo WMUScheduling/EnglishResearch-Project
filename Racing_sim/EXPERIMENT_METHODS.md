@@ -14,7 +14,7 @@ The progress reward scale multiplies route distance change. The off-track penalt
 
 ## Environment and behavior measures
 
-The simulator offers a simple oval and a technical multi-radius course. Select one track in the pilot and use that same track for every main experiment condition. The oval is 50 pixels wide on either side of its centerline. The technical course is generated from 72 control points and is 22 pixels wide on either side. The agent's observation has 10 values: heading error, normalized lateral offset and speed, two route lookaheads, lap progress, and departure allowance. Actions combine one of three throttle choices with one of five steering choices.
+The simulator offers an oval, a technical multi-radius course, and a complex circuit. Preview the choices before the pilot, select one course, and use that same track for every main experiment condition. The oval uses 36 control points and is 50 pixels wide on either side of its centerline. The technical course uses 72 control points and is 22 pixels wide on either side. The complex circuit uses 60 control points, is 18 pixels wide on either side, and includes long straights, linked turns, a chicane, and hairpin sections. The agent's observation has 10 values: heading error, normalized lateral offset and speed, two route lookaheads, lap progress, and departure allowance. Actions combine one of three throttle choices with one of five steering choices.
 
 The main dependent measures are lap progress, track departures, lap completion, and steps per completed lap. Also record average speed, fraction of time below the low-speed threshold, and on-track fraction. These measures help distinguish safer turn behavior from a policy that simply drives slowly or stops. Compare these behavior measures across conditions. Raw cumulative reward is not the primary outcome because its scale changes by design.
 
@@ -34,7 +34,7 @@ From `Racing_sim`, install requirements:
 python -m pip install -r requirements.txt
 ```
 
-Run the pilot on the oval:
+Preview the complex course before training, then run the pilot on the selected fixed course:
 
 ```powershell
 python train_agent.py --track oval --timesteps 500000 --seed 42
