@@ -412,8 +412,9 @@ class RacingEnv(gym.Env):
                 self.window_closed = True
                 return
 
-        left_edge = self.track_centerline + self.track_half_width * self.track_normals
-        right_edge = self.track_centerline - self.track_half_width * self.track_normals
+        sample_indices = np.arange(0, len(self.track_centerline), 4)
+        center_points = self.track_centerline[sample_indices]
+        normals = self.track_normals[sample_indices]
 
         def to_screen(points):
             points = np.asarray(points, dtype=np.float64)
@@ -422,11 +423,19 @@ class RacingEnv(gym.Env):
                 + np.array([600.0, 420.0])
             ).astype(np.int32)
 
-        centerline = to_screen(self.track_centerline)
-        left_edge_screen = to_screen(left_edge)
-        right_edge_screen = to_screen(right_edge)
-        road_width = int(round(self.track_half_width * 2.4))
-        shoulder_width = road_width + 14
+        centerline = to_screen(center_points)
+        left_edge = to_screen(
+            center_points + self.track_half_width * normals
+        )
+        right_edge = to_screen(
+            center_points - self.track_half_width * normals
+        )
+        shoulder_left = to_screen(
+            center_points + (self.track_half_width + 6.0) * normals
+        )
+        shoulder_right = to_screen(
+            center_points - (self.track_half_width + 6.0) * normals
+        )
 
         self.screen.fill((25, 43, 40))
         for x in range(0, 1200, 60):
@@ -434,20 +443,22 @@ class RacingEnv(gym.Env):
         for y in range(0, 840, 60):
             pygame.draw.line(self.screen, (32, 52, 47), (0, y), (1200, y), 1)
 
-        pygame.draw.lines(
-            self.screen, (13, 19, 22), True, centerline, shoulder_width
+        shoulder_polygon = np.concatenate(
+            (shoulder_left, shoulder_right[::-1])
         )
-        pygame.draw.lines(
-            self.screen, (58, 63, 68), True, centerline, road_width
-        )
-        pygame.draw.lines(
-            self.screen, (230, 234, 232), True, left_edge_screen, 2
-        )
-        pygame.draw.lines(
-            self.screen, (230, 234, 232), True, right_edge_screen, 2
-        )
+        road_polygon = np.concatenate((left_edge, right_edge[::-1]))
+        pygame.draw.polygon(self.screen, (13, 19, 22), shoulder_polygon)
+        pygame.draw.polygon(self.screen, (58, 63, 68), road_polygon)
+        pygame.draw.aalines(self.screen, (230, 234, 232), True, left_edge)
+        pygame.draw.aalines(self.screen, (230, 234, 232), True, right_edge)
 
-        dash_stride = max(1, int(34 / max(float(np.mean(self.segment_lengths)), 1.0)))
+        dash_stride = max(
+            1,
+            int(
+                34
+                / max(float(np.mean(self.segment_lengths)) * 1.2 * 4, 1.0)
+            ),
+        )
         for index in range(0, len(centerline), dash_stride * 2):
             start_dash = centerline[index]
             end_dash = centerline[(index + dash_stride) % len(centerline)]
@@ -486,7 +497,7 @@ class RacingEnv(gym.Env):
         color = (125, 235, 170) if self.on_track else (255, 115, 115)
         panel = pygame.Surface((560, 94), pygame.SRCALPHA)
         panel.fill((12, 20, 23, 225))
-        self.screen.blit(panel, (18, 18))
+        self.screen.blit(panel, (370, 350))
         title = self.font.render(
             f"{self.track_name.upper()} CIRCUIT",
             True,
@@ -502,9 +513,9 @@ class RacingEnv(gym.Env):
             True,
             (205, 214, 211),
         )
-        self.screen.blit(title, (34, 28))
-        self.screen.blit(label, (34, 59))
-        self.screen.blit(detail, (430, 59))
+        self.screen.blit(title, (386, 360))
+        self.screen.blit(label, (386, 391))
+        self.screen.blit(detail, (782, 391))
         pygame.display.flip()
         self.clock.tick(self.metadata["render_fps"])
 
