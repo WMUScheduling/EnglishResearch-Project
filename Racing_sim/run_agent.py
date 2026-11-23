@@ -1,28 +1,39 @@
+"""Drive a saved PPO policy on screen."""
+
+import argparse
+from pathlib import Path
+
 from stable_baselines3 import PPO
 
 from racing_env import RacingEnv
 
 
-env = RacingEnv(render_mode="human")
-model = PPO.load("ppo_racing_v2.zip")
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--model", type=Path, required=True)
+    args = parser.parse_args()
 
-observation, info = env.reset()
-terminated = False
-truncated = False
-total_reward = 0
+    env = RacingEnv(render_mode="human")
+    model = PPO.load(str(args.model), device="cpu")
+    observation, _ = env.reset()
+    terminated = False
+    truncated = False
+    total_reward = 0.0
+    info = {}
 
-while not terminated and not truncated and not env.window_closed:
-    action, state = model.predict(observation, deterministic=True)
-    observation, reward, terminated, truncated, info = env.step(action)
-    total_reward += reward
-    env.render()
+    while not terminated and not truncated and not env.window_closed:
+        action, _ = model.predict(observation, deterministic=True)
+        observation, reward, terminated, truncated, info = env.step(action)
+        total_reward += float(reward)
+        env.render()
 
-print(f"Episode reward: {total_reward:.2f}")
-print(f"Progress: {info['progress_laps']:.2f} laps")
-print(f"Departures: {info['off_track_count']}")
-print(f"Final speed: {env.car_speed:.2f}")
-print(f"Ended by stranded rule: {info.get('stranded', False)}")
-print(f"Terminated: {terminated}")
-print(f"Truncated: {truncated}")
+    print(f"Episode reward: {total_reward:.2f}")
+    print(f"Progress: {info.get('progress_laps', 0.0):.2f} laps")
+    print(f"Departures: {info.get('off_track_count', 0)}")
+    print(f"Finished: {info.get('finished', False)}")
+    print(f"Stranded: {info.get('stranded', False)}")
+    env.close()
 
-env.close()
+
+if __name__ == "__main__":
+    main()
