@@ -11,7 +11,7 @@ python -m pip install -r requirements.txt
 python main.py
 ```
 
-## Preview a track\n\nOpen a static preview before training. Close the window to exit.\n\n```powershell\npython preview_track.py --track complex\n```\n\nAvailable tracks are `oval`, `technical`, and `complex`. The complex circuit has a wider range of turn radii and linked S bends, without crossing itself. Its preview window is larger, with clearer track edges and markings. Preview and choose the course before the pilot, then keep it fixed throughout the experiment.\n\n## Establish the pilot baseline
+## Preview a track\n\nOpen a static preview before training. Close the window to exit.\n\n```powershell\npython preview_track.py --track complex\n```\n\nAvailable tracks are `oval`, `technical`, and `complex`. The complex circuit has longer straights, tighter rounded corners, and linked S bends, without crossing itself. Its preview window is larger, with clear track edges and markings. Preview and choose the course before the pilot, then keep it fixed throughout the experiment.\n\n## Establish the pilot baseline
 
 Run the default consequence values on the oval and check whether the agent can complete laps:
 
