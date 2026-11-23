@@ -47,10 +47,10 @@ def main():
     config = {
         "algorithm": "PPO",
         "policy": "MlpPolicy",
-        "track": "technical_multiturn_v1",
+        "track": "technical_multiturn_v2",
         "track_control_points": int(len(RacingEnv.CONTROL_POINTS)),
         "track_samples_per_segment": 8,
-        "track_half_width_pixels": 42,
+        "track_half_width_pixels": 22,
         "reset_lateral_offset_pixels": [-8, 8],
         "reset_heading_jitter_degrees": [-5, 5],
         "reset_speed_range": [0, 0.4],
