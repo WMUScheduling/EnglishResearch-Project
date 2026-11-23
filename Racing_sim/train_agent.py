@@ -78,6 +78,11 @@ def main():
         "progress_reward_scale": args.progress_reward_scale,
         "off_track_penalty_scale": args.off_track_penalty_scale,
         "completion_bonus": args.completion_bonus,
+        "evaluation_reward_reference": {
+            "progress_reward_scale": 0.04,
+            "off_track_penalty_scale": 1.0,
+            "completion_bonus": 100.0,
+        },
         "resume_model": str(args.resume_model) if args.resume_model else None,
         "total_timesteps": args.timesteps,
         "seed": args.seed,
@@ -106,7 +111,7 @@ def main():
         info_keywords=EPISODE_INFO,
     )
     eval_env = Monitor(
-        RacingEnv(track=args.track, progress_reward_scale=args.progress_reward_scale, off_track_penalty_scale=args.off_track_penalty_scale, completion_bonus=args.completion_bonus),
+        RacingEnv(track=args.track, progress_reward_scale=0.04, off_track_penalty_scale=1.0, completion_bonus=100.0),
         filename=str(run_dir / "evaluation" / "episodes"),
         info_keywords=EPISODE_INFO,
     )
