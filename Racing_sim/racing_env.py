@@ -96,12 +96,33 @@ class RacingEnv(gym.Env):
         dtype=np.float64,
     )
 
+    COMPLEX_CONTROL_POINTS = np.array(
+        [
+            [820.0, 555.0], [870.0, 535.0], [910.0, 495.0], [930.0, 445.0],
+            [925.0, 395.0], [900.0, 355.0], [860.0, 330.0], [820.0, 335.0],
+            [790.0, 365.0], [795.0, 405.0], [830.0, 430.0], [875.0, 425.0],
+            [910.0, 400.0], [930.0, 360.0], [920.0, 315.0], [890.0, 275.0],
+            [920.0, 235.0], [930.0, 190.0], [905.0, 150.0], [865.0, 125.0],
+            [815.0, 125.0], [775.0, 150.0], [740.0, 195.0], [710.0, 245.0],
+            [675.0, 275.0], [640.0, 260.0], [610.0, 230.0], [575.0, 210.0],
+            [540.0, 205.0], [510.0, 220.0], [490.0, 250.0], [490.0, 285.0],
+            [515.0, 315.0], [550.0, 340.0], [570.0, 375.0], [555.0, 405.0],
+            [525.0, 425.0], [485.0, 435.0], [445.0, 430.0], [410.0, 410.0],
+            [380.0, 380.0], [350.0, 355.0], [320.0, 345.0], [290.0, 360.0],
+            [265.0, 390.0], [250.0, 435.0], [255.0, 480.0], [285.0, 515.0],
+            [330.0, 535.0], [380.0, 540.0], [425.0, 525.0], [460.0, 500.0],
+            [490.0, 470.0], [525.0, 455.0], [565.0, 465.0], [600.0, 495.0],
+            [630.0, 530.0], [675.0, 550.0], [725.0, 560.0], [775.0, 560.0],
+        ],
+        dtype=np.float64,
+    )
+
     def __init__(self, render_mode=None, track="technical", progress_reward_scale=0.04, off_track_penalty_scale=1.0):
         super().__init__()
         if render_mode not in (None, "human"):
             raise ValueError("render_mode must be None or 'human'")
-        if track not in ("oval", "technical"):
-            raise ValueError("track must be 'oval' or 'technical'")
+        if track not in ("oval", "technical", "complex"):
+            raise ValueError("track must be 'oval', 'technical', or 'complex'")
 
         if progress_reward_scale <= 0:
             raise ValueError("progress_reward_scale must be positive")
@@ -117,7 +138,7 @@ class RacingEnv(gym.Env):
         self.font = None
         self.window_closed = False
 
-        self.track_half_width = 50.0 if track == "oval" else 22.0
+        self.track_half_width = {"oval": 50.0, "technical": 22.0, "complex": 18.0}[track]
         self.max_speed = 4.5
         self.max_steps = 4000
         self.max_departures = 6
@@ -194,6 +215,11 @@ class RacingEnv(gym.Env):
                 (500 + 300 * np.cos(angles), 350 + 205 * np.sin(angles))
             )
             return self._catmull_rom(oval_points)
+        if track == "complex":
+            return self._catmull_rom(
+                self.COMPLEX_CONTROL_POINTS,
+                samples_per_segment=12,
+            )
         return self._catmull_rom(self.CONTROL_POINTS)
 
     @staticmethod
@@ -403,8 +429,13 @@ class RacingEnv(gym.Env):
 
         self.screen.fill((48, 120, 62))
         pygame.draw.polygon(self.screen, (220, 220, 205), road_polygon)
+        road_width = int(round(self.track_half_width * 2))
         pygame.draw.lines(
-            self.screen, (75, 75, 75), True, self.track_centerline.astype(np.int32), 78
+            self.screen,
+            (75, 75, 75),
+            True,
+            self.track_centerline.astype(np.int32),
+            road_width,
         )
         pygame.draw.lines(
             self.screen, (245, 245, 245), True, left_edge.astype(np.int32), 3
