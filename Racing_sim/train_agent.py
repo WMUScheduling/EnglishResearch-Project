@@ -55,7 +55,7 @@ def main():
         "algorithm": "PPO",
         "policy": "MlpPolicy",
         "track": args.track,
-        "track_control_points": {"oval": 36, "technical": len(RacingEnv.CONTROL_POINTS), "complex": len(RacingEnv.COMPLEX_CONTROL_POINTS)}[args.track],
+        "track_control_points": {"oval": 36, "technical": len(RacingEnv.CONTROL_POINTS), "complex": 72}[args.track],
         "track_samples_per_segment": 12 if args.track == "complex" else 8,
         "track_half_width_pixels": {"oval": 50, "technical": 22, "complex": 18}[args.track],
         "reset_lateral_offset_pixels": [-8, 8],
