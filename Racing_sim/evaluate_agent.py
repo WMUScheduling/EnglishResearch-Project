@@ -12,7 +12,7 @@ from racing_env import RacingEnv
 
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--track", choices=("oval", "technical"), default="technical")
+    parser.add_argument("--track", choices=("oval", "technical", "complex"), default="technical")
     parser.add_argument("--progress-reward-scale", type=float, default=0.04)
     parser.add_argument("--off-track-penalty-scale", type=float, default=1.0)
     parser.add_argument("--model", type=Path, required=True)
