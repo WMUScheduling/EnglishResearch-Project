@@ -30,6 +30,7 @@ def parse_args():
     parser.add_argument("--resume-model", type=Path)
     parser.add_argument("--progress-reward-scale", type=float, default=0.04)
     parser.add_argument("--off-track-penalty-scale", type=float, default=1.0)
+    parser.add_argument("--completion-bonus", type=float, default=100.0, help="Reward added for completing a lap")
     parser.add_argument("--timesteps", type=int, default=500_000)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--eval-freq", type=int, default=25_000)
@@ -76,6 +77,7 @@ def main():
         ],
         "progress_reward_scale": args.progress_reward_scale,
         "off_track_penalty_scale": args.off_track_penalty_scale,
+        "completion_bonus": args.completion_bonus,
         "resume_model": str(args.resume_model) if args.resume_model else None,
         "total_timesteps": args.timesteps,
         "seed": args.seed,
@@ -99,12 +101,12 @@ def main():
     )
 
     train_env = Monitor(
-        RacingEnv(track=args.track, progress_reward_scale=args.progress_reward_scale, off_track_penalty_scale=args.off_track_penalty_scale),
+        RacingEnv(track=args.track, progress_reward_scale=args.progress_reward_scale, off_track_penalty_scale=args.off_track_penalty_scale, completion_bonus=args.completion_bonus),
         filename=str(run_dir / "train"),
         info_keywords=EPISODE_INFO,
     )
     eval_env = Monitor(
-        RacingEnv(track=args.track),
+        RacingEnv(track=args.track, progress_reward_scale=args.progress_reward_scale, off_track_penalty_scale=args.off_track_penalty_scale, completion_bonus=args.completion_bonus),
         filename=str(run_dir / "evaluation" / "episodes"),
         info_keywords=EPISODE_INFO,
     )
