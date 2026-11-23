@@ -198,16 +198,14 @@ class RacingEnv(gym.Env):
             angles = np.linspace(0.0, 2 * math.pi, 96, endpoint=False)
             radius = (
                 1.0
-                + 0.17 * np.sin(3 * angles + 0.35)
-                + 0.12 * np.sin(7 * angles - 0.6)
-                + 0.08 * np.cos(11 * angles + 0.2)
-                + 0.06 * np.sin(15 * angles - 0.3)
-                + 0.025 * np.cos(19 * angles + 0.7)
+                + 0.14 * np.sin(3 * angles + 0.35)
+                + 0.08 * np.sin(5 * angles - 0.6)
+                + 0.035 * np.cos(8 * angles + 0.2)
             )
             complex_points = np.column_stack(
                 (
-                    500 + 310 * radius * np.cos(angles),
-                    350 + 210 * radius * np.sin(angles),
+                    500 + 340 * radius * np.cos(angles),
+                    350 + 230 * radius * np.sin(angles),
                 )
             )
             return self._catmull_rom(complex_points, samples_per_segment=16)
@@ -440,14 +438,8 @@ class RacingEnv(gym.Env):
             self.screen, (13, 19, 22), True, centerline, shoulder_width
         )
         pygame.draw.lines(
-            self.screen, (70, 77, 84), True, centerline, road_width
+            self.screen, (58, 63, 68), True, centerline, road_width
         )
-        shoulder_radius = shoulder_width // 2
-        road_radius = road_width // 2
-        for x, y in centerline[::8]:
-            pygame.draw.circle(self.screen, (13, 19, 22), (int(x), int(y)), shoulder_radius)
-            pygame.draw.circle(self.screen, (70, 77, 84), (int(x), int(y)), road_radius)
-
         pygame.draw.lines(
             self.screen, (230, 234, 232), True, left_edge_screen, 2
         )
