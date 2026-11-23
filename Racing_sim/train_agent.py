@@ -51,6 +51,9 @@ def main():
         "track_control_points": int(len(RacingEnv.CONTROL_POINTS)),
         "track_samples_per_segment": 8,
         "track_half_width_pixels": 42,
+        "reset_lateral_offset_pixels": [-8, 8],
+        "reset_heading_jitter_degrees": [-5, 5],
+        "reset_speed_range": [0, 0.4],
         "action_space": "MultiDiscrete([3, 5])",
         "observation_features": [
             "heading_error_sin",
@@ -95,6 +98,7 @@ def main():
         filename=str(run_dir / "evaluation" / "episodes"),
         info_keywords=EPISODE_INFO,
     )
+    eval_env.reset(seed=args.seed + 10_000)
 
     checkpoint_callback = CheckpointCallback(
         save_freq=max(args.checkpoint_freq, 1),

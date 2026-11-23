@@ -9,7 +9,7 @@ from gymnasium import spaces
 
 
 class RacingEnv(gym.Env):
-    """A deterministic, single-lap racing task with a fixed technical circuit.
+    """A seeded single-lap racing task with a fixed technical circuit.
 
     The vehicle is controlled with discrete throttle and steering choices.
     Observations describe heading, lateral position, speed, and two points
@@ -161,10 +161,14 @@ class RacingEnv(gym.Env):
 
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
-        self.car_x, self.car_y = map(float, self.track_centerline[0])
         first_tangent = self.segment_tangents[0]
-        self.car_angle = math.degrees(math.atan2(-first_tangent[1], first_tangent[0]))
-        self.car_speed = 0.0
+        start_normal = self.track_normals[0]
+        start_offset = float(self.np_random.uniform(-8.0, 8.0))
+        start_position = self.track_centerline[0] + start_normal * start_offset
+        self.car_x, self.car_y = map(float, start_position)
+        base_angle = math.degrees(math.atan2(-first_tangent[1], first_tangent[0]))
+        self.car_angle = base_angle + float(self.np_random.uniform(-5.0, 5.0))
+        self.car_speed = float(self.np_random.uniform(0.0, 0.4))
         self.steps = 0
         self.progress_distance = 0.0
         self.off_track_count = 0
