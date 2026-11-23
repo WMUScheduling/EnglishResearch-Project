@@ -96,27 +96,6 @@ class RacingEnv(gym.Env):
         dtype=np.float64,
     )
 
-    COMPLEX_CONTROL_POINTS = np.array(
-        [
-            [820.0, 555.0], [870.0, 535.0], [910.0, 495.0], [930.0, 445.0],
-            [925.0, 395.0], [900.0, 355.0], [860.0, 330.0], [820.0, 335.0],
-            [790.0, 365.0], [795.0, 405.0], [830.0, 430.0], [875.0, 425.0],
-            [910.0, 400.0], [930.0, 360.0], [920.0, 315.0], [890.0, 275.0],
-            [920.0, 235.0], [930.0, 190.0], [905.0, 150.0], [865.0, 125.0],
-            [815.0, 125.0], [775.0, 150.0], [740.0, 195.0], [710.0, 245.0],
-            [675.0, 275.0], [640.0, 260.0], [610.0, 230.0], [575.0, 210.0],
-            [540.0, 205.0], [510.0, 220.0], [490.0, 250.0], [490.0, 285.0],
-            [515.0, 315.0], [550.0, 340.0], [570.0, 375.0], [555.0, 405.0],
-            [525.0, 425.0], [485.0, 435.0], [445.0, 430.0], [410.0, 410.0],
-            [380.0, 380.0], [350.0, 355.0], [320.0, 345.0], [290.0, 360.0],
-            [265.0, 390.0], [250.0, 435.0], [255.0, 480.0], [285.0, 515.0],
-            [330.0, 535.0], [380.0, 540.0], [425.0, 525.0], [460.0, 500.0],
-            [490.0, 470.0], [525.0, 455.0], [565.0, 465.0], [600.0, 495.0],
-            [630.0, 530.0], [675.0, 550.0], [725.0, 560.0], [775.0, 560.0],
-        ],
-        dtype=np.float64,
-    )
-
     def __init__(self, render_mode=None, track="technical", progress_reward_scale=0.04, off_track_penalty_scale=1.0):
         super().__init__()
         if render_mode not in (None, "human"):
@@ -216,10 +195,20 @@ class RacingEnv(gym.Env):
             )
             return self._catmull_rom(oval_points)
         if track == "complex":
-            return self._catmull_rom(
-                self.COMPLEX_CONTROL_POINTS,
-                samples_per_segment=12,
+            angles = np.linspace(0.0, 2 * math.pi, 72, endpoint=False)
+            radius = (
+                1.0
+                + 0.17 * np.sin(3 * angles + 0.35)
+                + 0.10 * np.sin(7 * angles - 0.6)
+                + 0.045 * np.cos(11 * angles + 0.2)
             )
+            complex_points = np.column_stack(
+                (
+                    500 + 300 * radius * np.cos(angles),
+                    350 + 205 * radius * np.sin(angles),
+                )
+            )
+            return self._catmull_rom(complex_points, samples_per_segment=12)
         return self._catmull_rom(self.CONTROL_POINTS)
 
     @staticmethod
@@ -425,24 +414,46 @@ class RacingEnv(gym.Env):
 
         left_edge = self.track_centerline + self.track_half_width * self.track_normals
         right_edge = self.track_centerline - self.track_half_width * self.track_normals
-        road_polygon = np.concatenate((left_edge, right_edge[::-1])).astype(np.int32)
-
-        self.screen.fill((48, 120, 62))
-        pygame.draw.polygon(self.screen, (220, 220, 205), road_polygon)
+        centerline = self.track_centerline.astype(np.int32)
         road_width = int(round(self.track_half_width * 2))
+        shoulder_width = road_width + 12
+
+        self.screen.fill((30, 48, 44))
+        for x in range(0, 1000, 50):
+            pygame.draw.line(self.screen, (38, 58, 52), (x, 0), (x, 700), 1)
+        for y in range(0, 700, 50):
+            pygame.draw.line(self.screen, (38, 58, 52), (0, y), (1000, y), 1)
+
         pygame.draw.lines(
-            self.screen,
-            (75, 75, 75),
-            True,
-            self.track_centerline.astype(np.int32),
-            road_width,
+            self.screen, (18, 24, 27), True, centerline, shoulder_width
         )
         pygame.draw.lines(
-            self.screen, (245, 245, 245), True, left_edge.astype(np.int32), 3
+            self.screen, (73, 79, 85), True, centerline, road_width
+        )
+        shoulder_radius = shoulder_width // 2
+        road_radius = road_width // 2
+        for x, y in centerline[::8]:
+            pygame.draw.circle(self.screen, (18, 24, 27), (int(x), int(y)), shoulder_radius)
+            pygame.draw.circle(self.screen, (73, 79, 85), (int(x), int(y)), road_radius)
+
+        pygame.draw.lines(
+            self.screen, (225, 231, 230), True, left_edge.astype(np.int32), 2
         )
         pygame.draw.lines(
-            self.screen, (245, 245, 245), True, right_edge.astype(np.int32), 3
+            self.screen, (225, 231, 230), True, right_edge.astype(np.int32), 2
         )
+
+        dash_stride = max(1, int(34 / max(float(np.mean(self.segment_lengths)), 1.0)))
+        for index in range(0, len(centerline), dash_stride * 2):
+            start_dash = centerline[index]
+            end_dash = centerline[(index + dash_stride) % len(centerline)]
+            pygame.draw.line(
+                self.screen,
+                (224, 194, 102),
+                tuple(map(int, start_dash)),
+                tuple(map(int, end_dash)),
+                2,
+            )
 
         start = self.track_centerline[0]
         tangent = self.segment_tangents[0]
@@ -466,14 +477,28 @@ class RacingEnv(gym.Env):
 
         progress = max(0.0, self.progress_distance / self.track_length)
         status = "ON TRACK" if self.on_track else "OFF TRACK"
-        color = (255, 255, 255) if self.on_track else (255, 80, 80)
+        color = (125, 235, 170) if self.on_track else (255, 115, 115)
+        panel = pygame.Surface((480, 76), pygame.SRCALPHA)
+        panel.fill((12, 20, 23, 220))
+        self.screen.blit(panel, (14, 14))
+        title = self.font.render(
+            f"{self.track_name.upper()} CIRCUIT",
+            True,
+            (238, 241, 238),
+        )
         label = self.font.render(
-            f"{status}  Speed: {self.car_speed:.2f}  Progress: {progress:.2f} laps"
-            f"  Departures: {self.off_track_count}",
+            f"{status}   Speed {self.car_speed:.2f}   Lap progress {progress:.2f}",
             True,
             color,
         )
-        self.screen.blit(label, (18, 18))
+        detail = self.font.render(
+            f"Departures {self.off_track_count}",
+            True,
+            (205, 214, 211),
+        )
+        self.screen.blit(title, (26, 21))
+        self.screen.blit(label, (26, 43))
+        self.screen.blit(detail, (370, 43))
         pygame.display.flip()
         self.clock.tick(self.metadata["render_fps"])
 
