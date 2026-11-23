@@ -195,20 +195,22 @@ class RacingEnv(gym.Env):
             )
             return self._catmull_rom(oval_points)
         if track == "complex":
-            angles = np.linspace(0.0, 2 * math.pi, 72, endpoint=False)
+            angles = np.linspace(0.0, 2 * math.pi, 96, endpoint=False)
             radius = (
                 1.0
                 + 0.17 * np.sin(3 * angles + 0.35)
-                + 0.10 * np.sin(7 * angles - 0.6)
-                + 0.045 * np.cos(11 * angles + 0.2)
+                + 0.12 * np.sin(7 * angles - 0.6)
+                + 0.08 * np.cos(11 * angles + 0.2)
+                + 0.06 * np.sin(15 * angles - 0.3)
+                + 0.025 * np.cos(19 * angles + 0.7)
             )
             complex_points = np.column_stack(
                 (
-                    500 + 300 * radius * np.cos(angles),
-                    350 + 205 * radius * np.sin(angles),
+                    500 + 310 * radius * np.cos(angles),
+                    350 + 210 * radius * np.sin(angles),
                 )
             )
-            return self._catmull_rom(complex_points, samples_per_segment=12)
+            return self._catmull_rom(complex_points, samples_per_segment=16)
         return self._catmull_rom(self.CONTROL_POINTS)
 
     @staticmethod
@@ -402,10 +404,10 @@ class RacingEnv(gym.Env):
             return
         if self.screen is None:
             pygame.init()
-            self.screen = pygame.display.set_mode((1000, 700))
+            self.screen = pygame.display.set_mode((1200, 840))
             pygame.display.set_caption(f"{self.track_name.title()} Racing Track")
             self.clock = pygame.time.Clock()
-            self.font = pygame.font.SysFont(None, 24)
+            self.font = pygame.font.SysFont(None, 28)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -414,33 +416,43 @@ class RacingEnv(gym.Env):
 
         left_edge = self.track_centerline + self.track_half_width * self.track_normals
         right_edge = self.track_centerline - self.track_half_width * self.track_normals
-        centerline = self.track_centerline.astype(np.int32)
-        road_width = int(round(self.track_half_width * 2))
-        shoulder_width = road_width + 12
 
-        self.screen.fill((30, 48, 44))
-        for x in range(0, 1000, 50):
-            pygame.draw.line(self.screen, (38, 58, 52), (x, 0), (x, 700), 1)
-        for y in range(0, 700, 50):
-            pygame.draw.line(self.screen, (38, 58, 52), (0, y), (1000, y), 1)
+        def to_screen(points):
+            points = np.asarray(points, dtype=np.float64)
+            return np.rint(
+                (points - np.array([500.0, 350.0])) * 1.2
+                + np.array([600.0, 420.0])
+            ).astype(np.int32)
+
+        centerline = to_screen(self.track_centerline)
+        left_edge_screen = to_screen(left_edge)
+        right_edge_screen = to_screen(right_edge)
+        road_width = int(round(self.track_half_width * 2.4))
+        shoulder_width = road_width + 14
+
+        self.screen.fill((25, 43, 40))
+        for x in range(0, 1200, 60):
+            pygame.draw.line(self.screen, (32, 52, 47), (x, 0), (x, 840), 1)
+        for y in range(0, 840, 60):
+            pygame.draw.line(self.screen, (32, 52, 47), (0, y), (1200, y), 1)
 
         pygame.draw.lines(
-            self.screen, (18, 24, 27), True, centerline, shoulder_width
+            self.screen, (13, 19, 22), True, centerline, shoulder_width
         )
         pygame.draw.lines(
-            self.screen, (73, 79, 85), True, centerline, road_width
+            self.screen, (70, 77, 84), True, centerline, road_width
         )
         shoulder_radius = shoulder_width // 2
         road_radius = road_width // 2
         for x, y in centerline[::8]:
-            pygame.draw.circle(self.screen, (18, 24, 27), (int(x), int(y)), shoulder_radius)
-            pygame.draw.circle(self.screen, (73, 79, 85), (int(x), int(y)), road_radius)
+            pygame.draw.circle(self.screen, (13, 19, 22), (int(x), int(y)), shoulder_radius)
+            pygame.draw.circle(self.screen, (70, 77, 84), (int(x), int(y)), road_radius)
 
         pygame.draw.lines(
-            self.screen, (225, 231, 230), True, left_edge.astype(np.int32), 2
+            self.screen, (230, 234, 232), True, left_edge_screen, 2
         )
         pygame.draw.lines(
-            self.screen, (225, 231, 230), True, right_edge.astype(np.int32), 2
+            self.screen, (230, 234, 232), True, right_edge_screen, 2
         )
 
         dash_stride = max(1, int(34 / max(float(np.mean(self.segment_lengths)), 1.0)))
@@ -458,36 +470,38 @@ class RacingEnv(gym.Env):
         start = self.track_centerline[0]
         tangent = self.segment_tangents[0]
         normal = np.array([-tangent[1], tangent[0]])
-        start_a = start - normal * self.track_half_width
-        start_b = start + normal * self.track_half_width
+        start_a = to_screen(start - normal * self.track_half_width)
+        start_b = to_screen(start + normal * self.track_half_width)
         pygame.draw.line(
             self.screen,
-            (255, 210, 40),
-            start_a.astype(int),
-            start_b.astype(int),
-            5,
+            (255, 213, 72),
+            tuple(map(int, start_a)),
+            tuple(map(int, start_b)),
+            6,
         )
 
-        car_image = pygame.Surface((34, 18), pygame.SRCALPHA)
-        pygame.draw.rect(car_image, (220, 45, 45), (0, 0, 34, 18), border_radius=4)
-        pygame.draw.rect(car_image, (160, 220, 240), (22, 3, 8, 12), border_radius=2)
+        car_image = pygame.Surface((41, 22), pygame.SRCALPHA)
+        pygame.draw.rect(car_image, (232, 58, 55), (0, 0, 41, 22), border_radius=5)
+        pygame.draw.rect(car_image, (170, 224, 243), (27, 4, 10, 14), border_radius=3)
         rotated_car = pygame.transform.rotate(car_image, self.car_angle)
-        car_rectangle = rotated_car.get_rect(center=(self.car_x, self.car_y))
+        car_position = to_screen([self.car_x, self.car_y])
+        car_rectangle = rotated_car.get_rect(center=tuple(map(int, car_position)))
+
         self.screen.blit(rotated_car, car_rectangle)
 
         progress = max(0.0, self.progress_distance / self.track_length)
         status = "ON TRACK" if self.on_track else "OFF TRACK"
         color = (125, 235, 170) if self.on_track else (255, 115, 115)
-        panel = pygame.Surface((480, 76), pygame.SRCALPHA)
-        panel.fill((12, 20, 23, 220))
-        self.screen.blit(panel, (14, 14))
+        panel = pygame.Surface((560, 94), pygame.SRCALPHA)
+        panel.fill((12, 20, 23, 225))
+        self.screen.blit(panel, (18, 18))
         title = self.font.render(
             f"{self.track_name.upper()} CIRCUIT",
             True,
             (238, 241, 238),
         )
         label = self.font.render(
-            f"{status}   Speed {self.car_speed:.2f}   Lap progress {progress:.2f}",
+            f"{status}   Speed {self.car_speed:.2f}   Lap {progress:.2f}",
             True,
             color,
         )
@@ -496,9 +510,9 @@ class RacingEnv(gym.Env):
             True,
             (205, 214, 211),
         )
-        self.screen.blit(title, (26, 21))
-        self.screen.blit(label, (26, 43))
-        self.screen.blit(detail, (370, 43))
+        self.screen.blit(title, (34, 28))
+        self.screen.blit(label, (34, 59))
+        self.screen.blit(detail, (430, 59))
         pygame.display.flip()
         self.clock.tick(self.metadata["render_fps"])
 
