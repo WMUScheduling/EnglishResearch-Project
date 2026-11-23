@@ -53,6 +53,7 @@ def main():
                 f"Episode {episode + 1}: "
                 f"progress={info.get('progress_laps', 0.0):.3f} laps, "
                 f"departures={info.get('off_track_count', 0)}, "
+                f"points={env.episode_return:.2f}, "
                 f"finished={info.get('finished', False)}, "
                 f"average_speed={info.get('average_speed', 0.0):.2f}"
             )
